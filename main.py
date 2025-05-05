@@ -222,7 +222,6 @@ def main():
         print("\nИ победа в номинации лучшая аппроксимирующая функция достается: :", best[0])
         print("=" * 50)
 
-        # Отображаем график
         plot_all_functions(x, y, [(r[0], r[1], r[2]) for r in results])
 
     except Exception as e:
