@@ -110,6 +110,11 @@ def load_data():
                         break
                     print(f"Ожидалось {n} значений, получено {len(y)}. Мы тут циферки прикинули... не сходятся!")
 
+                points = set(zip(x, y))
+                if len(points) < n:
+                    print("А че эт у нас точки повторяются? Нееееееее, низя!")
+                    continue
+
                 return np.array(x), np.array(y)
 
             elif choice == "2":
@@ -131,6 +136,11 @@ def load_data():
 
                     if data.shape[1] != 2 or not (8 <= len(data) <= 12):
                         print("В файле должно быть от 8 до 12 пар точек, не больше, не меньше, только так")
+                        continue
+
+                    points = set(tuple(point) for point in data)
+                    if len(points) < len(data):
+                        print("Точки повторяться не могут, не надо тут!")
                         continue
 
                     return data[:, 0], data[:, 1]
