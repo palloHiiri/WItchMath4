@@ -49,7 +49,6 @@ def power_approximation(x, y):
     phi = lambda x_: a * (np.clip(x_, 1e-10, None)**b)
     return phi, (a, b)
 
-# === Дополнительные метрики ===
 def calculate_sse(phi, x, y):
     return sum((phi(xi) - yi) ** 2 for xi, yi in zip(x, y))
 
@@ -65,33 +64,91 @@ def coefficient_of_determination(phi, x, y):
     sse = calculate_sse(phi, x, y)
     return 1 - sse / sst if sst != 0 else 0
 
-# === Чтение данных ===
+
 def load_data():
-    print("Выберите способ ввода данных:")
-    print("1. Ввести вручную")
-    print("2. Загрузить из файла")
+    while True:
+        print("\nВыберите способ ввода данных:")
+        print("1. Ввести вручную")
+        print("2. Загрузить из файла")
+        print("3. Выход")
 
-    choice = input("Ваш выбор: ").strip()
-    if choice == "1":
-        n = int(input("Введите количество точек (от 8 до 12): "))
-        if not (8 <= n <= 12):
-            raise ValueError("Количество точек должно быть от 8 до 12.")
-        x = list(map(float, input(f"Введите {n} значений x через пробел: ").split()))
-        y = list(map(float, input(f"Введите {n} значений y через пробел: ").split()))
-        return np.array(x), np.array(y)
-    elif choice == "2":
-        path = input("Введите путь к файлу (формат: x1 y1\nx2 y2...): ")
-        if not os.path.exists(path):
-            raise FileNotFoundError("Файл не найден.")
-        data = np.loadtxt(path)
-        x, y = data[:, 0], data[:, 1]
-        if not (8 <= len(x) <= 12):
-            raise ValueError("Неверное количество точек в файле.")
-        return x, y
-    else:
-        raise ValueError("Неверный выбор.")
+        choice = input("Ваш выбор: ").strip()
 
-# === Форматированный вывод ===
+        if choice == "3":
+            print("Выход")
+            exit()
+
+        try:
+            if choice == "1":
+                while True:
+                    n_input = input("Введите количество точек (от 8 до 12): ")
+                    if not n_input.isdigit():
+                        print("А можно пж число, а можно пж целое?")
+                        continue
+                    n = int(n_input)
+                    if 8 <= n <= 12:
+                        break
+                    print("Количество точек должно быть от 8 до 12. Другие значения не принимаем")
+
+                while True:
+                    x_input = input(f"Введите {n} значений x через пробел: ").replace(',', '.')
+                    if not all(c in '0123456789.- ' for c in x_input):
+                        print("Моя регулярка говорит, что ты ввел плохо, я ей верю.")
+                        continue
+                    x = list(map(float, x_input.split()))
+                    if len(x) == n:
+                        break
+                    print(f"Ожидалось {n} значений, получено {len(x)}. Что-то тут не так...")
+
+                while True:
+                    y_input = input(f"Введите {n} значений y через пробел: ").replace(',', '.')
+                    if not all(c in '0123456789.- ' for c in y_input):
+                        print("Моя регулярка говорит, что ты правила нарушаешь, давай заново")
+                        continue
+                    y = list(map(float, y_input.split()))
+                    if len(y) == n:
+                        break
+                    print(f"Ожидалось {n} значений, получено {len(y)}. Мы тут циферки прикинули... не сходятся!")
+
+                return np.array(x), np.array(y)
+
+            elif choice == "2":
+                path = input("Введите путь к файлу (формат файла: x1 y1\nx2 y2...): ")
+
+                try:
+                    if not os.path.exists(path):
+                        print("Такого файла у нас нет")
+                        continue
+
+                    with open(path, 'r') as f:
+                        content = f.read().replace(',', '.')
+
+                    if not all(c in '0123456789. - \n' for c in content):
+                        print("Моя регулярка говорит, что в файле что-то не то")
+                        continue
+
+                    data = np.loadtxt(content.splitlines())
+
+                    if data.shape[1] != 2 or not (8 <= len(data) <= 12):
+                        print("В файле должно быть от 8 до 12 пар точек, не больше, не меньше, только так")
+                        continue
+
+                    return data[:, 0], data[:, 1]
+
+                except ValueError as e:
+                    print("Ошибка при чтении файла, что-то ты там накосячил")
+                    continue
+                except Exception as e:
+                    print("Ну такого даже я не ожидала")
+                    continue
+
+            else:
+                print("Неверный выбор. Пожалуйста, введите 1, 2 или 0.")
+
+        except KeyboardInterrupt:
+            print("\nКлавиши жмете всякие... я умер, все!")
+            exit()
+
 def format_function(name, coeffs, sigma, r2, sse, corr=None):
     print("=" * 50)
     print(f"Аппроксимирующая функция: {name}")
@@ -113,7 +170,6 @@ def format_function(name, coeffs, sigma, r2, sse, corr=None):
     print(f"Мера отклонения: S = {sse:.3f}")
     print("=" * 50)
 
-# === График ===
 def plot_all_functions(x, y, functions):
     x_plot = np.linspace(min(x) - 0.5, max(x) + 0.5, 500)
     plt.figure(figsize=(12, 6))
@@ -127,7 +183,6 @@ def plot_all_functions(x, y, functions):
     plt.ylabel('φ(x)')
     plt.show()
 
-# === Точка входа ===
 def main():
     try:
         x, y = load_data()
@@ -154,14 +209,14 @@ def main():
                 print(f"[Ошибка] Не удалось выполнить {name}: {str(e)}")
 
         best = min(results, key=lambda r: r[3])
-        print("\n🏆 Лучшая аппроксимирующая функция:", best[0])
+        print("\nИ победа в номинации лучшая аппроксимирующая функция достается: :", best[0])
         print("=" * 50)
 
         # Отображаем график
         plot_all_functions(x, y, [(r[0], r[1], r[2]) for r in results])
 
     except Exception as e:
-        print(f"[Ошибка] {str(e)}")
+        print(f"Сломалось:( {str(e)}")
 
 if __name__ == "__main__":
     main()
